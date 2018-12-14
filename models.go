@@ -2,23 +2,38 @@ package tpggo
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
+const (
+	timeParseLayout = "2006-01-02T15:04:05-0700"
+)
+
+// APITime wraps time.Time for handle custom
+// formatting
 type APITime struct {
 	time.Time
 }
 
 func (t *APITime) UnmarshalJSON(b []byte) error {
 
-	s := string(b)
-	if nt, err := time.Parse("2006-01-02T15:04:05-0700", s); err != nil {
+	s := strings.Trim(string(b), `"`)
+	if nt, err := time.Parse(timeParseLayout, s); err != nil {
 		return err
 	} else {
 		t.Time = nt
 	}
 
 	return nil
+}
+
+func (t APITime) Equal(o time.Time) bool {
+	return t.Time.Equal(o)
+}
+
+func (t APITime) String() string {
+	return t.Time.String()
 }
 
 // LatLng represents a WGS84 projection of a point
@@ -30,9 +45,9 @@ type LatLng struct {
 // APIError returns the information
 // about the failing request
 type APIError struct {
-	Timestamp    time.Time `json:"timestamp"`
-	ErrorCode    int       `json:"errorCode"`
-	ErrorMessage string    `json:"errorMessage"`
+	Timestamp    APITime `json:"timestamp"`
+	ErrorCode    int     `json:"errorCode"`
+	ErrorMessage string  `json:"errorMessage"`
 }
 
 func (e APIError) error() string {
@@ -51,7 +66,7 @@ type LineColor struct {
 // GetLinesResponse is the response to
 // a get lines response.
 type GetLinesResponse struct {
-	Timestamp time.Time   `json:"timestamp"`
+	Timestamp APITime     `json:"timestamp"`
 	Colors    []LineColor `json:"colors"`
 }
 
@@ -64,8 +79,8 @@ type GetStopResponse struct {
 
 type Stop struct {
 	Connections []Connection `json:"connections"`
-	StopCode    string       `json:"stopCode"`
-	StopName    string       `json:"stopName"`
+	Code        string       `json:"stopCode"`
+	Name        string       `json:"stopName"`
 	Distance    int          `json:"distance"`
 }
 
@@ -158,7 +173,7 @@ type NextDeparture struct {
 type GetAllNextDeparturesResponse struct {
 	Departures []Departure `json:"departures"`
 	Stop       Stop        `json:"stop"`
-	Timestamp  time.Time   `json:"timestamp"`
+	Timestamp  APITime     `json:"timestamp"`
 }
 type Departure struct {
 	DepartureCode     int64      `json:"departureCode"`
